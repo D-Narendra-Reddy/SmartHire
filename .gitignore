@@ -1,0 +1,30 @@
+# Maven
+target/
+*.class
+*.jar
+*.war
+
+# IDE files
+.idea/
+*.iml
+.eclipse/
+.settings/
+.classpath
+.project
+.vscode/
+*.launch
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment / secrets (never commit real credentials)
+.env
+*.env
+
+# Spring Boot devtools restart
+.mvn/
+
+# Logs
+*.log
+logs/
