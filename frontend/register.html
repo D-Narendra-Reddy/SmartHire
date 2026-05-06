@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - SmartHire</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="logo">SmartHire</a>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="login.html" class="btn btn-outline">Login</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="form-container">
+            <h2 style="text-align: center; margin-bottom: 1.5rem;">Create an Account</h2>
+            <div id="register-msg" class="hidden"></div>
+            
+            <form id="register-form">
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" class="form-control" minlength="6" required>
+                </div>
+                <div class="form-group">
+                    <label for="role">I am a</label>
+                    <select id="role" class="form-control" required>
+                        <option value="CANDIDATE">Candidate (Looking for job)</option>
+                        <option value="RECRUITER">Recruiter (Hiring)</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Sign Up</button>
+            </form>
+            <p style="text-align: center; margin-top: 1.5rem;">
+                Already have an account? <a href="login.html">Login</a>
+            </p>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const role = document.getElementById('role').value;
+
+            try {
+                const response = await apiCall('/auth/register', 'POST', { name, email, password, role });
+                showMessage('register-msg', response.message);
+                
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 2000);
+            } catch (error) {
+                // If it's a validation error with field mapping (from our GlobalExceptionHandler)
+                try {
+                    const errorObj = JSON.parse(error.message);
+                    if(typeof errorObj === 'object') {
+                        const msg = Object.values(errorObj).join(', ');
+                        showMessage('register-msg', msg, true);
+                        return;
+                    }
+                } catch(e) {}
+                
+                showMessage('register-msg', error.message, true);
+            }
+        });
+    </script>
+</body>
+</html>

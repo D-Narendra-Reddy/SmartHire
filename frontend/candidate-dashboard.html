@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Candidate Dashboard - SmartHire</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="logo">SmartHire</a>
+        <div class="nav-links" id="auth-links"></div>
+    </nav>
+
+    <div class="container dashboard-grid">
+        <aside class="sidebar">
+            <ul class="sidebar-nav">
+                <li><a href="#" class="active" onclick="showSection('profile-section', this)">My Profile</a></li>
+                <li><a href="#" onclick="showSection('resume-section', this)">My Resume</a></li>
+                <li><a href="#" onclick="showSection('applications-section', this); loadApplications()">Applied Jobs</a></li>
+                <li><a href="#" onclick="showSection('saved-section', this); loadSavedJobs()">Saved Jobs</a></li>
+                <li><a href="#" onclick="showSection('recommended-section', this); loadRecommendedJobs()">Recommended Jobs</a></li>
+            </ul>
+        </aside>
+
+        <main class="dashboard-content">
+            <div id="msg" class="hidden"></div>
+
+            <!-- Profile Section -->
+            <section id="profile-section">
+                <h2>My Profile</h2>
+                <div class="card" style="margin-top: 1.5rem; max-width: 600px;">
+                    <form id="profile-form">
+                        <div class="form-group">
+                            <label>Full Name</label>
+                            <input type="text" id="prof-name" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Phone</label>
+                            <input type="text" id="prof-phone" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Professional Title</label>
+                            <input type="text" id="prof-title" class="form-control" placeholder="e.g. Java Backend Developer">
+                        </div>
+                        <div class="form-group">
+                            <label>Bio</label>
+                            <textarea id="prof-bio" class="form-control" rows="4"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Skills (comma separated)</label>
+                            <input type="text" id="prof-skills" class="form-control" placeholder="e.g. Java, Spring Boot, MySQL">
+                        </div>
+                        <div class="form-group">
+                            <label>Experience</label>
+                            <input type="text" id="prof-exp" class="form-control" placeholder="e.g. 2 years">
+                        </div>
+                        <div class="form-group">
+                            <label>Education</label>
+                            <input type="text" id="prof-edu" class="form-control" placeholder="e.g. B.Tech Computer Science">
+                        </div>
+                        <div style="margin-bottom: 1.5rem; padding: 1rem; background: var(--bg-color); border-radius: 0.5rem;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <strong>Profile Completeness</strong>
+                                <span id="prof-score-text">0%</span>
+                            </div>
+                            <div style="width: 100%; background-color: #e2e8f0; border-radius: 9999px; height: 0.75rem;">
+                                <div id="prof-score-bar" style="background-color: var(--primary-color); height: 100%; border-radius: 9999px; width: 0%;"></div>
+                            </div>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">Fill all fields and upload a resume to reach 100%.</p>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save Profile</button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Resume Section -->
+            <section id="resume-section" class="hidden">
+                <h2>My Resume</h2>
+                <div class="card" style="margin-top: 1.5rem; max-width: 600px;">
+                    <p style="margin-bottom: 1rem; color: var(--text-muted);">Upload your latest resume (PDF format only).</p>
+                    <form id="resume-form">
+                        <div class="form-group">
+                            <input type="file" id="resume-file" class="form-control" accept=".pdf" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="upload-btn">Upload Resume</button>
+                    </form>
+                    <div id="current-resume" style="margin-top: 1.5rem;"></div>
+                </div>
+            </section>
+
+            <!-- Applications Section -->
+            <section id="applications-section" class="hidden">
+                <h2>Applied Jobs</h2>
+                <div class="table-container" style="margin-top: 1.5rem;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Job Title</th>
+                                <th>Applied At</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="applications-table-body">
+                            <!-- Data -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Saved Jobs Section -->
+            <section id="saved-section" class="hidden">
+                <h2>Saved Jobs</h2>
+                <div class="grid" id="saved-jobs-grid" style="margin-top: 1.5rem;">
+                    <!-- Data -->
+                </div>
+            </section>
+
+            <!-- Recommended Jobs Section -->
+            <section id="recommended-section" class="hidden">
+                <h2>Recommended Jobs for You</h2>
+                <p style="color: var(--text-muted); margin-top: 0.5rem;">Jobs tailored to your skills. Update your profile skills to get better recommendations!</p>
+                <div class="grid" id="recommended-jobs-grid" style="margin-top: 1.5rem;">
+                    <!-- Data -->
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        if(!isAuthenticated() || !hasRole('ROLE_CANDIDATE')) {
+            window.location.href = 'login.html';
+        }
+
+        function showSection(id, navElement) {
+            document.querySelectorAll('.dashboard-content section').forEach(sec => sec.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+            
+            document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
+            navElement.classList.add('active');
+        }
+
+        // --- Profile Logic ---
+        async function loadProfile() {
+            try {
+                const response = await apiCall('/users/profile');
+                const user = response.data;
+                document.getElementById('prof-name').value = user.name || '';
+                document.getElementById('prof-phone').value = user.phone || '';
+                document.getElementById('prof-title').value = user.title || '';
+                document.getElementById('prof-bio').value = user.bio || '';
+                document.getElementById('prof-skills').value = user.skills || '';
+                document.getElementById('prof-exp').value = user.experience || '';
+                document.getElementById('prof-edu').value = user.education || '';
+                
+                const score = user.profileCompletenessScore || 0;
+                document.getElementById('prof-score-text').textContent = score + '%';
+                document.getElementById('prof-score-bar').style.width = score + '%';
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        document.getElementById('profile-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                name: document.getElementById('prof-name').value,
+                phone: document.getElementById('prof-phone').value,
+                title: document.getElementById('prof-title').value,
+                bio: document.getElementById('prof-bio').value,
+                skills: document.getElementById('prof-skills').value,
+                experience: document.getElementById('prof-exp').value,
+                education: document.getElementById('prof-edu').value
+            };
+            try {
+                await apiCall('/users/profile', 'PUT', payload);
+                showMessage('msg', 'Profile updated successfully');
+            } catch (error) {
+                showMessage('msg', error.message, true);
+            }
+        });
+
+        // --- Resume Logic ---
+        document.getElementById('resume-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fileInput = document.getElementById('resume-file');
+            if (fileInput.files.length === 0) return;
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            const btn = document.getElementById('upload-btn');
+            btn.textContent = 'Uploading...';
+            btn.disabled = true;
+
+            try {
+                const response = await apiCall('/files/resume', 'POST', formData, true);
+                showMessage('msg', 'Resume uploaded successfully!');
+                
+                document.getElementById('current-resume').innerHTML = `
+                    <p><strong>Current Resume:</strong> <button onclick="viewResume('${response.data.fileUrl}')" class="btn btn-outline" style="padding: 0.3rem 0.75rem; font-size: 0.85rem;">${response.data.fileName}</button></p>
+                `;
+            } catch (error) {
+                showMessage('msg', error.message, true);
+            } finally {
+                btn.textContent = 'Upload Resume';
+                btn.disabled = false;
+                fileInput.value = '';
+            }
+        });
+
+        // --- Applications Logic ---
+        async function loadApplications() {
+            try {
+                const response = await apiCall('/applications/candidate');
+                const apps = response.data;
+                const tbody = document.getElementById('applications-table-body');
+                
+                if (apps.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No applications found.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = apps.map(app => `
+                    <tr>
+                        <td><a href="apply-job.html?id=${app.job.id}">${app.job.title}</a></td>
+                        <td>${new Date(app.appliedAt).toLocaleDateString()}</td>
+                        <td><span class="badge">${app.status}</span></td>
+                        <td>
+                            <button onclick="withdrawApplication(${app.id})" class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">Withdraw</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        async function withdrawApplication(id) {
+            if(!confirm('Are you sure you want to withdraw this application?')) return;
+            try {
+                await apiCall(`/applications/${id}`, 'DELETE');
+                showMessage('msg', 'Application withdrawn.');
+                loadApplications();
+            } catch (error) {
+                showMessage('msg', error.message, true);
+            }
+        }
+
+        // --- Saved Jobs Logic ---
+        async function loadSavedJobs() {
+            try {
+                const response = await apiCall('/saved-jobs');
+                const jobs = response.data;
+                const grid = document.getElementById('saved-jobs-grid');
+                
+                if (jobs.length === 0) {
+                    grid.innerHTML = '<p style="grid-column: 1/-1;">No saved jobs.</p>';
+                    return;
+                }
+
+                grid.innerHTML = jobs.map(job => `
+                    <div class="card">
+                        <h3 class="card-title">${job.title}</h3>
+                        <p style="color: var(--text-muted); margin-bottom: 1rem;">${job.company.name}</p>
+                        <div style="display: flex; gap: 0.5rem; justify-content: space-between; margin-top: 1rem;">
+                            <a href="apply-job.html?id=${job.id}" class="btn btn-outline" style="flex: 1; text-align: center;">View</a>
+                            <button onclick="unsaveJob(${job.id})" class="btn btn-danger">Remove</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        async function unsaveJob(jobId) {
+            try {
+                await apiCall(`/saved-jobs/${jobId}`, 'DELETE');
+                loadSavedJobs();
+            } catch (error) {
+                showMessage('msg', error.message, true);
+            }
+        }
+
+        // --- Recommended Jobs Logic ---
+        async function loadRecommendedJobs() {
+            try {
+                const response = await apiCall('/jobs/recommended');
+                const jobs = response.data;
+                const grid = document.getElementById('recommended-jobs-grid');
+                
+                if (jobs.length === 0) {
+                    grid.innerHTML = '<p style="grid-column: 1/-1;">No recommendations found. Try updating your skills.</p>';
+                    return;
+                }
+
+                grid.innerHTML = jobs.map(job => `
+                    <div class="card">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <h3 class="card-title">${job.title}</h3>
+                            ${job.matchPercentage !== undefined ? `<span class="badge" style="background-color: var(--success); color: white;">Match: ${job.matchPercentage}%</span>` : ''}
+                        </div>
+                        <p style="color: var(--text-muted); margin-bottom: 1rem;">${job.company.name}</p>
+                        <div class="card-meta">
+                            <span class="badge">${formatEmploymentType(job.employmentType)}</span>
+                            <span class="badge">${formatExperience(job.experienceRequired)}</span>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; justify-content: space-between; margin-top: 1rem;">
+                            <a href="apply-job.html?id=${job.id}" class="btn btn-outline" style="flex: 1; text-align: center;">View Details</a>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadProfile();
+        });
+    </script>
+</body>
+</html>

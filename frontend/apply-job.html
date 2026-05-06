@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apply for Job - SmartHire</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="logo">SmartHire</a>
+        <div class="nav-links" id="auth-links"></div>
+    </nav>
+
+    <div class="container">
+        <div id="msg" class="hidden"></div>
+        <div class="dashboard-grid" style="grid-template-columns: 1fr; max-width: 800px; margin: 0 auto;">
+            
+            <div class="card" id="job-details-container">
+                <p>Loading job details...</p>
+            </div>
+
+            <div class="card hidden" id="apply-section">
+                <h3 style="margin-bottom: 1rem;">Apply for this position</h3>
+                <p style="margin-bottom: 1rem; color: var(--text-muted);">Ensure your profile and resume are up to date before applying.</p>
+                <button id="apply-btn" class="btn btn-primary" onclick="submitApplication()">Submit Application</button>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const jobId = urlParams.get('id');
+
+        async function loadJobDetails() {
+            if (!jobId) {
+                document.getElementById('job-details-container').innerHTML = '<p>Job not found.</p>';
+                return;
+            }
+
+            try {
+                const response = await apiCall(`/jobs/${jobId}`);
+                const job = response.data;
+
+                document.getElementById('job-details-container').innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <h2 style="margin-bottom: 0.5rem;">${job.title}</h2>
+                        ${job.matchPercentage !== undefined && job.matchPercentage !== null ? 
+                            `<span class="badge" style="background-color: var(--primary-color); color: white; font-size: 1rem; padding: 0.5rem 1rem;">Skill Match: ${job.matchPercentage}%</span>` 
+                            : ''}
+                    </div>
+                    <h4 style="color: var(--primary-color); margin-bottom: 1.5rem;">${job.company.name} • ${job.location}</h4>
+                    
+                    <div style="display: flex; gap: 1rem; margin-bottom: 2rem;">
+                        <span class="badge">${formatEmploymentType(job.employmentType)}</span>
+                        <span class="badge">${formatExperience(job.experienceRequired)}</span>
+                        ${job.salary ? `<span class="badge">${formatSalary(job.salary)}</span>` : ''}
+                    </div>
+
+                    <h4 style="margin-bottom: 0.5rem;">Description</h4>
+                    <p style="margin-bottom: 1.5rem; white-space: pre-line;">${job.description}</p>
+                    
+                    <h4 style="margin-bottom: 0.5rem;">Skills Required</h4>
+                    <p style="margin-bottom: 1.5rem;">${job.skillsRequired}</p>
+                    
+                    <p style="color: var(--text-muted); font-size: 0.875rem;">Deadline: ${new Date(job.applicationDeadline).toLocaleDateString()}</p>
+                `;
+
+                if (isAuthenticated() && hasRole('ROLE_CANDIDATE')) {
+                    document.getElementById('apply-section').classList.remove('hidden');
+                } else if (!isAuthenticated()) {
+                    document.getElementById('apply-section').classList.remove('hidden');
+                    document.getElementById('apply-section').innerHTML = `
+                        <p style="margin-bottom: 1rem;">Please <a href="login.html">login</a> or <a href="register.html">register</a> as a candidate to apply.</p>
+                    `;
+                }
+
+            } catch (error) {
+                document.getElementById('job-details-container').innerHTML = '<p>Failed to load job details.</p>';
+            }
+        }
+
+        async function submitApplication() {
+            try {
+                const btn = document.getElementById('apply-btn');
+                btn.textContent = 'Submitting...';
+                btn.disabled = true;
+
+                await apiCall(`/applications/job/${jobId}`, 'POST');
+                
+                showMessage('msg', 'Application submitted successfully!');
+                btn.textContent = 'Applied';
+                
+            } catch (error) {
+                showMessage('msg', error.message, true);
+                const btn = document.getElementById('apply-btn');
+                btn.textContent = 'Submit Application';
+                btn.disabled = false;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadJobDetails);
+    </script>
+</body>
+</html>

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find Jobs - SmartHire</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="logo">SmartHire</a>
+        <div class="nav-links" id="auth-links"></div>
+    </nav>
+
+    <div class="container">
+        <h2 style="margin-bottom: 1.5rem;">Browse Jobs</h2>
+        
+        <div style="background: var(--card-bg); padding: 1.5rem; border-radius: 0.5rem; margin-bottom: 2rem; display: flex; gap: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <input type="text" id="keyword" class="form-control" placeholder="Job title, skills...">
+            <input type="text" id="location" class="form-control" placeholder="Location">
+            <button onclick="fetchJobs()" class="btn btn-primary" style="white-space: nowrap;">Search</button>
+        </div>
+
+        <div id="loading" style="text-align: center; margin: 2rem 0;" class="hidden">Loading jobs...</div>
+        <div id="jobs-container" class="grid"></div>
+        
+        <div style="display: flex; justify-content: center; gap: 1rem; margin-top: 2rem;">
+            <button id="prev-btn" class="btn btn-outline hidden" onclick="changePage(-1)">Previous</button>
+            <span id="page-info" style="align-self: center;"></span>
+            <button id="next-btn" class="btn btn-outline hidden" onclick="changePage(1)">Next</button>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        let currentPage = 0;
+        let totalPages = 0;
+
+        async function fetchJobs() {
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('jobs-container').innerHTML = '';
+
+            const keyword = document.getElementById('keyword').value;
+            const location = document.getElementById('location').value;
+
+            let url = `/jobs?pageNo=${currentPage}&pageSize=9&sortBy=createdAt&sortDir=desc`;
+            if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
+            if (location) url += `&location=${encodeURIComponent(location)}`;
+
+            try {
+                const response = await apiCall(url);
+                const data = response.data;
+                
+                currentPage = data.number;
+                totalPages = data.totalPages;
+                
+                renderJobs(data.content);
+                updatePagination();
+            } catch (error) {
+                console.error(error);
+            } finally {
+                document.getElementById('loading').classList.add('hidden');
+            }
+        }
+
+        function renderJobs(jobs) {
+            const container = document.getElementById('jobs-container');
+            if (jobs.length === 0) {
+                container.innerHTML = '<p style="grid-column: 1/-1; text-align: center;">No jobs match your search criteria.</p>';
+                return;
+            }
+
+            container.innerHTML = jobs.map(job => `
+                <div class="card">
+                    <h3 class="card-title">${job.title}</h3>
+                    <p style="color: var(--text-muted); margin-bottom: 1rem;">${job.company.name} - ${job.location}</p>
+                    <div class="card-meta">
+                        <span class="badge">${formatEmploymentType(job.employmentType)}</span>
+                        <span class="badge">${formatExperience(job.experienceRequired)}</span>
+                        ${job.salary ? `<span class="badge">${formatSalary(job.salary)}</span>` : ''}
+                    </div>
+                    <p style="margin-bottom: 1.5rem; font-size: 0.9rem; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+                        ${job.description}
+                    </p>
+                    <div style="display: flex; gap: 0.5rem; justify-content: space-between;">
+                        <a href="apply-job.html?id=${job.id}" class="btn btn-primary" style="flex: 1; text-align: center;">Apply</a>
+                        ${hasRole('ROLE_CANDIDATE') ? `<button onclick="saveJob(${job.id})" class="btn btn-outline">Save</button>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function saveJob(id) {
+            try {
+                await apiCall(`/saved-jobs/${id}`, 'POST');
+                alert('Job saved successfully!');
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+
+        function updatePagination() {
+            document.getElementById('page-info').textContent = `Page ${currentPage + 1} of ${totalPages || 1}`;
+            
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+
+            if (currentPage > 0) prevBtn.classList.remove('hidden');
+            else prevBtn.classList.add('hidden');
+
+            if (currentPage < totalPages - 1) nextBtn.classList.remove('hidden');
+            else nextBtn.classList.add('hidden');
+        }
+
+        function changePage(delta) {
+            currentPage += delta;
+            fetchJobs();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check for URL params
+            const params = new URLSearchParams(window.location.search);
+            if (params.has('keyword')) {
+                document.getElementById('keyword').value = params.get('keyword');
+            }
+            fetchJobs();
+        });
+    </script>
+</body>
+</html>

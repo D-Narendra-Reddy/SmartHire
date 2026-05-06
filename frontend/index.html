@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartHire - Job Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="logo">SmartHire</a>
+        <div class="nav-links" id="auth-links">
+            <!-- Dynamically populated by app.js -->
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="container">
+            <h1>Find Your Dream Job Today</h1>
+            <p>Connect with top companies and take your career to the next level.</p>
+            <div style="margin-top: 2rem;">
+                <input type="text" id="search-input" placeholder="Job title, skills, or company" class="form-control" style="max-width: 400px; display: inline-block; margin-right: 10px;">
+                <button onclick="searchJobs()" class="btn btn-primary" style="padding: 0.75rem 1.5rem;">Search Jobs</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container" style="margin-top: 3rem;">
+        <h2 style="text-align: center; margin-bottom: 2rem;">Latest Job Openings</h2>
+        <div class="grid" id="latest-jobs">
+            <!-- Jobs populated here -->
+        </div>
+        <div style="text-align: center; margin-top: 2rem;">
+            <a href="jobs.html" class="btn btn-outline">View All Jobs</a>
+        </div>
+    </main>
+
+    <script src="js/app.js"></script>
+    <script>
+        function searchJobs() {
+            const keyword = document.getElementById('search-input').value;
+            window.location.href = `jobs.html?keyword=${encodeURIComponent(keyword)}`;
+        }
+
+        async function loadLatestJobs() {
+            try {
+                const response = await apiCall('/jobs?pageSize=6&sortBy=createdAt&sortDir=desc');
+                const jobs = response.data.content;
+                const container = document.getElementById('latest-jobs');
+                
+                if (jobs.length === 0) {
+                    container.innerHTML = '<p style="grid-column: 1/-1; text-align: center;">No jobs found.</p>';
+                    return;
+                }
+
+                container.innerHTML = jobs.map(job => `
+                    <div class="card">
+                        <h3 class="card-title">${job.title}</h3>
+                        <p style="color: var(--text-muted); margin-bottom: 1rem;">${job.company.name} - ${job.location}</p>
+                        <div class="card-meta">
+                            <span class="badge">${formatEmploymentType(job.employmentType)}</span>
+                            <span class="badge">${formatExperience(job.experienceRequired)}</span>
+                        </div>
+                        <p style="margin-bottom: 1.5rem; font-size: 0.9rem;">${job.skillsRequired}</p>
+                        <a href="apply-job.html?id=${job.id}" class="btn btn-outline" style="display: block; text-align: center;">View Details</a>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading jobs:', error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadLatestJobs);
+    </script>
+</body>
+</html>

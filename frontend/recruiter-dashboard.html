@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recruiter Dashboard - SmartHire</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="logo">SmartHire</a>
+        <div class="nav-links" id="auth-links"></div>
+    </nav>
+
+    <div class="container dashboard-grid">
+        <aside class="sidebar">
+            <ul class="sidebar-nav">
+                <li><a href="#" class="active" onclick="showSection('company-section', this)">Company Profile</a></li>
+                <li><a href="#" onclick="showSection('post-job-section', this)">Post a Job</a></li>
+                <li><a href="#" onclick="showSection('manage-jobs-section', this); loadRecruiterJobs()">Manage Jobs</a></li>
+            </ul>
+        </aside>
+
+        <main class="dashboard-content">
+            <div id="msg" class="hidden"></div>
+
+            <!-- Company Profile Section -->
+            <section id="company-section">
+                <h2>Company Profile</h2>
+                <div class="card" style="margin-top: 1.5rem; max-width: 600px;">
+                    <form id="company-form">
+                        <div class="form-group">
+                            <label>Company Name</label>
+                            <input type="text" id="comp-name" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Location</label>
+                            <input type="text" id="comp-loc" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Website</label>
+                            <input type="url" id="comp-web" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea id="comp-desc" class="form-control" rows="4"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save Company Profile</button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Post Job Section -->
+            <section id="post-job-section" class="hidden">
+                <h2>Post a New Job</h2>
+                <div class="card" style="margin-top: 1.5rem; max-width: 700px;">
+                    <form id="job-form">
+                        <div class="form-group">
+                            <label>Job Title</label>
+                            <input type="text" id="job-title" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Location</label>
+                            <input type="text" id="job-loc" class="form-control" required>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div class="form-group">
+                                <label>Employment Type</label>
+                                <select id="job-type" class="form-control" required>
+                                    <option value="FULL_TIME">Full Time</option>
+                                    <option value="PART_TIME">Part Time</option>
+                                    <option value="CONTRACT">Contract</option>
+                                    <option value="INTERNSHIP">Internship</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Experience Required</label>
+                                <input type="text" id="job-exp" class="form-control" placeholder="e.g. 2-4 years">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Salary (Optional)</label>
+                            <input type="text" id="job-salary" class="form-control" placeholder="e.g. $80,000 - $100,000">
+                        </div>
+                        <div class="form-group">
+                            <label>Skills Required (comma separated)</label>
+                            <input type="text" id="job-skills" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Application Deadline</label>
+                            <input type="datetime-local" id="job-deadline" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea id="job-desc" class="form-control" rows="6" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Post Job</button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Manage Jobs Section -->
+            <section id="manage-jobs-section" class="hidden">
+                <h2>Manage Jobs</h2>
+                <div id="recruiter-jobs-container" class="grid" style="margin-top: 1.5rem;">
+                    <!-- Jobs -->
+                </div>
+            </section>
+
+            <!-- View Applicants Section -->
+            <section id="applicants-section" class="hidden">
+                <button class="btn btn-outline" style="margin-bottom: 1rem;" onclick="showSection('manage-jobs-section', document.querySelectorAll('.sidebar-nav a')[2])">&larr; Back to Jobs</button>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h2 id="applicants-job-title" style="margin: 0;">Applicants</h2>
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <label style="font-size: 0.875rem; color: var(--text-muted); white-space: nowrap;">Sort By:</label>
+                        <select id="sort-applicants" class="form-control" style="width: 170px; padding: 0.4rem 0.6rem; font-size: 0.875rem;" onchange="applySort()">
+                            <option value="">Date Applied</option>
+                            <option value="match">Match %</option>
+                            <option value="experience">Experience</option>
+                            <option value="completeness">Profile Score</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table style="min-width: 750px;">
+                        <thead>
+                            <tr>
+                                <th style="min-width: 180px;">Candidate</th>
+                                <th style="min-width: 80px; text-align: center;">Match</th>
+                                <th style="min-width: 100px;">Experience</th>
+                                <th style="min-width: 90px; text-align: center;">Profile</th>
+                                <th style="min-width: 80px; text-align: center;">Resume</th>
+                                <th style="min-width: 130px;">Status</th>
+                                <th style="min-width: 90px;">Applied</th>
+                            </tr>
+                        </thead>
+                        <tbody id="applicants-table-body">
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        if(!isAuthenticated() || !hasRole('ROLE_RECRUITER')) {
+            window.location.href = 'login.html';
+        }
+
+        function showSection(id, navElement) {
+            document.querySelectorAll('.dashboard-content section').forEach(sec => sec.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+            
+            if(navElement) {
+                document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
+                navElement.classList.add('active');
+            }
+        }
+
+        // --- Company Profile Logic ---
+        async function loadCompanyProfile() {
+            try {
+                const response = await apiCall('/users/company');
+                const comp = response.data;
+                document.getElementById('comp-name').value = comp.name || '';
+                document.getElementById('comp-loc').value = comp.location || '';
+                document.getElementById('comp-web').value = comp.website || '';
+                document.getElementById('comp-desc').value = comp.description || '';
+            } catch (error) {
+                // If not found, it's fine, recruiter hasn't created one yet
+                if(!error.message.includes('not found')) {
+                    console.error(error);
+                }
+            }
+        }
+
+        document.getElementById('company-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                name: document.getElementById('comp-name').value,
+                location: document.getElementById('comp-loc').value,
+                website: document.getElementById('comp-web').value,
+                description: document.getElementById('comp-desc').value
+            };
+            try {
+                await apiCall('/users/company', 'POST', payload);
+                showMessage('msg', 'Company profile saved successfully!');
+            } catch (error) {
+                showMessage('msg', error.message, true);
+            }
+        });
+
+        // --- Post Job Logic ---
+        document.getElementById('job-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const payload = {
+                title: document.getElementById('job-title').value,
+                location: document.getElementById('job-loc').value,
+                employmentType: document.getElementById('job-type').value,
+                experienceRequired: document.getElementById('job-exp').value,
+                salary: document.getElementById('job-salary').value,
+                skillsRequired: document.getElementById('job-skills').value,
+                applicationDeadline: document.getElementById('job-deadline').value,
+                description: document.getElementById('job-desc').value
+            };
+
+            try {
+                await apiCall('/jobs', 'POST', payload);
+                showMessage('msg', 'Job posted successfully!');
+                document.getElementById('job-form').reset();
+                showSection('manage-jobs-section', document.querySelectorAll('.sidebar-nav a')[2]);
+                loadRecruiterJobs();
+            } catch (error) {
+                showMessage('msg', error.message, true);
+            }
+        });
+
+        // --- Manage Jobs Logic ---
+        async function loadRecruiterJobs() {
+            try {
+                const response = await apiCall('/jobs/recruiter');
+                const jobs = response.data;
+                const container = document.getElementById('recruiter-jobs-container');
+                
+                if (jobs.length === 0) {
+                    container.innerHTML = '<p style="grid-column: 1/-1;">You have not posted any jobs yet.</p>';
+                    return;
+                }
+
+                container.innerHTML = jobs.map(job => `
+                    <div class="card">
+                        <h3 class="card-title">${job.title}</h3>
+                        <p style="color: var(--text-muted); font-size: 0.875rem;">Posted: ${new Date(job.createdAt).toLocaleDateString()}</p>
+                        <div style="margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <button onclick="viewApplicants(${job.id}, '${job.title}')" class="btn btn-primary" style="flex: 1;">Applicants</button>
+                            <button onclick="deleteJob(${job.id})" class="btn btn-danger">Delete</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                if(error.message.includes('No company profile')) {
+                    showMessage('msg', 'Please create a company profile first to view/manage jobs.', true);
+                } else {
+                    console.error(error);
+                }
+            }
+        }
+
+        async function deleteJob(id) {
+            if(!confirm('Are you sure you want to delete this job? This will also remove all applications associated with it.')) return;
+            try {
+                await apiCall(`/jobs/${id}`, 'DELETE');
+                showMessage('msg', 'Job deleted.');
+                loadRecruiterJobs();
+            } catch (error) {
+                showMessage('msg', error.message, true);
+            }
+        }
+
+        let currentJobId = null;
+        let currentJobTitle = null;
+
+        async function viewApplicants(jobId, jobTitle, sortBy = '') {
+            currentJobId = jobId;
+            currentJobTitle = jobTitle;
+            showSection('applicants-section');
+            document.getElementById('applicants-job-title').textContent = `Applicants for: ${jobTitle}`;
+            
+            try {
+                let url = `/applications/job/${jobId}`;
+                if (sortBy) {
+                    url += `?sortBy=${sortBy}`;
+                }
+                const response = await apiCall(url);
+                const apps = response.data;
+                const tbody = document.getElementById('applicants-table-body');
+                
+                if (apps.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No applicants yet.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = apps.map(app => {
+                    const candidate = app.candidate;
+                    const matchVal = (app.matchPercentage !== undefined && app.matchPercentage !== null) ? app.matchPercentage : null;
+                    const matchLabel = matchVal !== null ? `${matchVal}%` : 'N/A';
+                    const matchBg  = matchVal === null ? '#94a3b822' : matchVal >= 70 ? '#16a34a22' : matchVal >= 40 ? '#d9770622' : '#dc262622';
+                    const matchClr = matchVal === null ? '#94a3b8'   : matchVal >= 70 ? '#16a34a'   : matchVal >= 40 ? '#d97706'   : '#dc2626';
+                    const exp   = candidate.experience ? candidate.experience : '—';
+                    const score = candidate.profileCompletenessScore ? `${candidate.profileCompletenessScore}%` : '0%';
+
+                    return `
+                        <tr>
+                            <td>
+                                <strong style="display:block; font-size:0.9rem;">${candidate.name}</strong>
+                                <span style="font-size:0.78rem; color:var(--text-muted);">${candidate.email}</span>
+                            </td>
+                            <td style="text-align:center;">
+                                <span style="display:inline-block; padding:0.2rem 0.65rem; border-radius:999px; font-weight:700; font-size:0.82rem; background:${matchBg}; color:${matchClr}; border:1px solid ${matchClr}55;">
+                                    ${matchLabel}
+                                </span>
+                            </td>
+                            <td style="white-space:nowrap; font-size:0.875rem;">${exp}</td>
+                            <td style="text-align:center; font-weight:600; font-size:0.875rem;">${score}</td>
+                            <td style="text-align:center;">
+                                <button onclick="viewResume('${app.resume.fileUrl}')"
+                                    style="background:none; border:none; color:var(--primary-color); cursor:pointer; font-size:0.85rem; font-weight:600; padding:0; white-space:nowrap;">
+                                    📄 View
+                                </button>
+                            </td>
+                            <td>
+                                <select onchange="updateStatus(${app.id}, this.value)"
+                                    style="width:120px; padding:0.3rem 0.5rem; font-size:0.8rem; border:1px solid #e2e8f0; border-radius:6px; background:#fff; cursor:pointer; outline:none;">
+                                    <option value="APPLIED"     ${app.status==='APPLIED'     ? 'selected':''}>Applied</option>
+                                    <option value="REVIEWING"   ${app.status==='REVIEWING'   ? 'selected':''}>Reviewing</option>
+                                    <option value="SHORTLISTED" ${app.status==='SHORTLISTED' ? 'selected':''}>Shortlisted</option>
+                                    <option value="INTERVIEWED" ${app.status==='INTERVIEWED' ? 'selected':''}>Interviewed</option>
+                                    <option value="REJECTED"    ${app.status==='REJECTED'    ? 'selected':''}>Rejected</option>
+                                    <option value="HIRED"       ${app.status==='HIRED'       ? 'selected':''}>Hired</option>
+                                </select>
+                            </td>
+                            <td style="white-space:nowrap; font-size:0.82rem; color:var(--text-muted);">
+                                ${new Date(app.appliedAt).toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'})}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        function applySort() {
+            const sortBy = document.getElementById('sort-applicants').value;
+            if (currentJobId) {
+                viewApplicants(currentJobId, currentJobTitle, sortBy);
+            }
+        }
+
+        async function updateStatus(appId, newStatus) {
+            try {
+                await apiCall(`/applications/${appId}/status?status=${newStatus}`, 'PUT');
+                showMessage('msg', 'Status updated.');
+            } catch (error) {
+                showMessage('msg', error.message, true);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCompanyProfile();
+        });
+    </script>
+</body>
+</html>
